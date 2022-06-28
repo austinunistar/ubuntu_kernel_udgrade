@@ -1,0 +1,27 @@
+---
+- hosts: all
+  gather_facts: yes
+  become: true
+  vars:
+     root_password: 'finicast'
+
+  tasks:
+  - name: check current kernel version
+    debug: 
+      msg : ubuntu- "{{ ansible_distribution_version }}"
+    register: ubuntu_version
+
+  - name: download latest deb for the generic version
+    ansible.builtin.get_url:
+      url: "{{ item }}"
+      dest: '/tmp/'
+      validate_certs: no
+    loop:
+      - https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.6.10/linux-headers-5.6.10-050610_5.6.10-050610.202005052301_all.deb
+      - https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.6.10/linux-image-unsigned-5.6.10-050610-generic_5.6.10-050610.202005052301_amd64.deb
+      - https://kernel.ubuntu.com/~kernel-ppa/mainline/v5.6.10/linux-modules-5.6.10-050610-generic_5.6.10-050610.202005052301_amd64.deb
+    when: ubuntu_version != 18.04
+
+  - name: install and update the kernel
+    ansible.builtin.shell: |
+            dpkg -i /tmp/*.deb
